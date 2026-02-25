@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neuroid Media — Video Editor & Graphic Designer Application</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface-2: #1a1a1a;
+    --border: #222222;
+    --border-focus: #e8ff47;
+    --accent: #e8ff47;
+    --accent-dim: #e8ff4720;
+    --text: #f0f0f0;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+    --error: #ff4757;
+    --success: #2ed573;
+    --radius: 12px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Top bar */
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-logo img {
+    height: 36px;
+    width: auto;
+  }
+
+  .topbar-tag {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 140px 32px 60px;
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .hero h1 span {
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 540px;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Form Container */
+  .form-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 32px 100px;
+  }
+
+  /* Section */
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 20px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--bg);
+    background: var(--accent);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+
+  /* Field */
+  .field {
+    margin-bottom: 24px;
+  }
+
+  .field:last-child {
+    margin-bottom: 0;
+  }
+
+  .field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .field label .required {
+    color: var(--accent);
+    margin-left: 2px;
+  }
+
+  .field .hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+  }
+
+  select option {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  /* Radio / Checkbox Group */
+  .radio-group, .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .radio-option, .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .radio-option:hover, .checkbox-option:hover {
+    border-color: var(--text-muted);
+  }
+
+  .radio-option input, .checkbox-option input {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  .radio-option.selected, .checkbox-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .radio-option span, .checkbox-option span {
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  /* Two column */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  /* Submit */
+  .submit-section {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .submit-btn {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 14px;
+    padding: 18px 64px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px var(--accent-dim);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .submit-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 14px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 16px 28px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast.success {
+    background: #2ed57320;
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+
+  .toast.error {
+    background: #ff475720;
+    border: 1px solid var(--error);
+    color: var(--error);
+  }
+
+  /* Spinner */
+  .spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--bg);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Success state */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,10,0.95);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .success-overlay.show {
+    display: flex;
+  }
+
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .success-overlay h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -1px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .success-overlay p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Error state */
+  .field.has-error input,
+  .field.has-error textarea,
+  .field.has-error select {
+    border-color: var(--error);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--error);
+    margin-top: 4px;
+    display: none;
+  }
+
+  .field.has-error .field-error {
+    display: block;
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 120px 20px 40px; }
+    .form-container { padding: 0 20px 80px; }
+    .form-section { padding: 24px; }
+    .topbar { padding: 14px 20px; }
+    .hero h1 { letter-spacing: -1px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQ4BDgDASIAAhEBAxEB/8QAHQABAAIBBQEAAAAAAAAAAAAAAAcIBgECAwQFBf/EAFAQAAEDAgMDBQoNBAAFBAEEAwABAgMEBQYHEQgSITFRYXGBExUiMjdBdZGysxQjMzU2QmJyc3SCobEJElLCJCU0ksFDU6LwoydjZNEXJtL/xAAcAQEAAgMBAQEAAAAAAAAAAAAABQYBAwQHCAj/xABGEQEAAQIDAwcKBAUCBQQDAQAAAQIDBAUREiExBhNBUWFxgSIyMzQ1cpGxwdEUUqHwIzNCsuEVQiRTktLxYnOS4hZDYyX/2gAMAwEAAhEDEQA/ALlgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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" alt="Neuroid Media"></div>
+  <div class="topbar-tag">We're hiring</div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">Open Position</div>
+  <h1>Video Editor &<br>Graphic Designer<span>.</span></h1>
+  <p>Join Neuroid Media — a performance & creative growth agency for ambitious D2C brands. We're looking for someone who can craft fast, engaging content that stops thumbs and drives conversions. If you eat, sleep, and breathe D2C creative — this is for you.</p>
+</div>
+
+<form id="applicationForm" class="form-container" onsubmit="return false;">
+
+  <!-- Section 1: Personal Info -->
+  <div class="form-section">
+    <div class="section-header">
+      <div class="section-number">01</div>
+      <div class="section-title">Personal Information</div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Full Name <span class="required">*</span></label>
+        <input type="text" id="full_name" placeholder="Your full name" required>
+        <div class="field-error">This field is required</div>
+      </div>
+      <div class="field">
+        <label>Email Address <span class="required">*</span></label>
+        <input type="email" id="email" placeholder="you@email.com" required>
+        <div class="field-error">Please enter a valid email</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Phone Number <span class="required">*</span></label>
+        <input type="tel" id="phone" placeholder="+91 98765 43210" required>
+        <div class="field-error">This field is required</div>
+      </div>
+      <div class="field">
+        <label>City <span class="required">*</span></label>
+        <input type="text" id="city" placeholder="Current city" required>
+        <div class="field-error">This field is required</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>LinkedIn Profile</label>
+      <input type="url" id="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+    </div>
+  </div>
+
+  <!-- Section 2: Role & Skills -->
+  <div class="form-section">
+    <div class="section-header">
+      <div class="section-number">02</div>
+      <div class="section-title">Role & Skills</div>
+    </div>
+
+    <div class="field">
+      <label>Which role are you applying for? <span class="required">*</span></label>
+      <div class="radio-group">
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=role_type]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="role_type" value="Video Editor" required>
+          <span>Video Editor</span>
+        </label>
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=role_type]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="role_type" value="Graphic Designer">
+          <span>Graphic Designer</span>
+        </label>
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=role_type]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="role_type" value="Both - Video Editor & Graphic Designer">
+          <span>Both — Video Editor & Graphic Designer</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Years of Experience <span class="required">*</span></label>
+      <select id="experience" required>
+        <option value="" disabled selected>Select experience level</option>
+        <option value="0-1 years">0–1 years</option>
+        <option value="1-2 years">1–2 years</option>
+        <option value="2-3 years">2–3 years</option>
+        <option value="3-5 years">3–5 years</option>
+        <option value="5+ years">5+ years</option>
+      </select>
+      <div class="field-error">Please select your experience</div>
+    </div>
+
+    <div class="field">
+      <label>Tools you use <span class="required">*</span></label>
+      <div class="hint">Select all that apply</div>
+      <div class="checkbox-group">
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="Adobe Premiere Pro">
+          <span>Adobe Premiere Pro</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="After Effects">
+          <span>After Effects</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="DaVinci Resolve">
+          <span>DaVinci Resolve</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="CapCut">
+          <span>CapCut</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="Figma">
+          <span>Figma</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="Adobe Photoshop">
+          <span>Adobe Photoshop</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="Adobe Illustrator">
+          <span>Adobe Illustrator</span>
+        </label>
+        <label class="checkbox-option" onclick="let c=this.querySelector('input');c.checked=!c.checked;this.classList.toggle('selected',c.checked);event.preventDefault()">
+          <input type="checkbox" name="tools" value="Canva">
+          <span>Canva</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Portfolio & Work -->
+  <div class="form-section">
+    <div class="section-header">
+      <div class="section-number">03</div>
+      <div class="section-title">Portfolio & Work Samples</div>
+    </div>
+
+    <div class="field">
+      <label>Portfolio / Reel Link <span class="required">*</span></label>
+      <div class="hint">Share your best work — Google Drive, Behance, Dribbble, YouTube, Instagram, etc.</div>
+      <input type="url" id="portfolio" placeholder="https://drive.google.com/... or https://behance.net/..." required>
+      <div class="field-error">Portfolio link is required</div>
+    </div>
+
+    <div class="field">
+      <label>Have you worked on D2C brand creatives before? <span class="required">*</span></label>
+      <div class="hint">Tell us about your experience with D2C content — ad creatives, UGC edits, social media, etc.</div>
+      <textarea id="d2c_experience" placeholder="E.g. Edited 50+ UGC-style video ads for fashion & beauty D2C brands, achieving 2x improvement in hook rates..." required></textarea>
+      <div class="field-error">This field is required</div>
+    </div>
+
+    <div class="field">
+      <label>What makes your edits/designs stand out? <span class="required">*</span></label>
+      <textarea id="standout" placeholder="What's your creative superpower? Fast turnarounds, scroll-stopping hooks, clean typography, motion graphics..." required></textarea>
+      <div class="field-error">This field is required</div>
+    </div>
+  </div>
+
+  <!-- Section 4: Availability & Compensation -->
+  <div class="form-section">
+    <div class="section-header">
+      <div class="section-number">04</div>
+      <div class="section-title">Availability & Compensation</div>
+    </div>
+
+    <div class="field">
+      <label>Are you okay with WFO in Delhi? <span class="required">*</span></label>
+      <div class="radio-group">
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=wfo_delhi]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="wfo_delhi" value="Yes" required>
+          <span>Yes</span>
+        </label>
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=wfo_delhi]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="wfo_delhi" value="No">
+          <span>No</span>
+        </label>
+        <label class="radio-option" onclick="this.querySelector('input').checked=true; document.querySelectorAll('[name=wfo_delhi]').forEach(r=>{r.closest('.radio-option').classList.toggle('selected',r.checked)})">
+          <input type="radio" name="wfo_delhi" value="Hybrid preferred">
+          <span>Hybrid preferred</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label>Current CTC (per annum) <span class="required">*</span></label>
+        <input type="text" id="current_ctc" placeholder="e.g. ₹4,00,000" required>
+        <div class="field-error">This field is required</div>
+      </div>
+      <div class="field">
+        <label>Expected CTC (per annum) <span class="required">*</span></label>
+        <input type="text" id="expected_ctc" placeholder="e.g. ₹6,00,000" required>
+        <div class="field-error">This field is required</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notice Period <span class="required">*</span></label>
+      <select id="notice_period" required>
+        <option value="" disabled selected>Select notice period</option>
+        <option value="Immediate">Immediate</option>
+        <option value="15 days">15 days</option>
+        <option value="30 days">30 days</option>
+        <option value="60 days">60 days</option>
+        <option value="90 days">90 days</option>
+      </select>
+      <div class="field-error">Please select your notice period</div>
+    </div>
+
+    <div class="field">
+      <label>Anything else you'd like us to know?</label>
+      <textarea id="additional_info" placeholder="Awards, certifications, passion projects, or anything that makes you unique..."></textarea>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="submit-section">
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+      <span id="btnText">Submit Application</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <p class="submit-note">Your information is safe with us. We'll review your application and get back to you within 5 business days.</p>
+  </div>
+</form>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">✓</div>
+  <h2>Application Submitted!</h2>
+  <p>Thank you for applying to Neuroid Media. We'll be in touch soon.</p>
+</div>
+
+<script>
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyl6MQ6MVVy8NcyxWQWWah6_l0JlveqBnocrwvQL71bOT7lD0H_iDAgyCTj5BLRrljq/exec';
+
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+function validateForm() {
+  let valid = true;
+  const requiredFields = ['full_name', 'email', 'phone', 'city', 'experience', 'portfolio', 'd2c_experience', 'standout', 'current_ctc', 'expected_ctc', 'notice_period'];
+  
+  requiredFields.forEach(id => {
+    const el = document.getElementById(id);
+    const field = el.closest('.field');
+    if (!el.value.trim()) {
+      field.classList.add('has-error');
+      valid = false;
+    } else {
+      field.classList.remove('has-error');
+    }
+  });
+
+  // Radio validations
+  const roleType = document.querySelector('[name=role_type]:checked');
+  if (!roleType) {
+    showToast('Please select a role type', 'error');
+    valid = false;
+  }
+
+  const wfoDelhi = document.querySelector('[name=wfo_delhi]:checked');
+  if (!wfoDelhi) {
+    showToast('Please select WFO preference', 'error');
+    valid = false;
+  }
+
+  // Tools validation
+  const tools = document.querySelectorAll('[name=tools]:checked');
+  if (tools.length === 0) {
+    showToast('Please select at least one tool', 'error');
+    valid = false;
+  }
+
+  return valid;
+}
+
+function submitForm() {
+  if (!validateForm()) return;
+
+  const btn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const spinner = document.getElementById('spinner');
+
+  btn.disabled = true;
+  btnText.style.display = 'none';
+  spinner.style.display = 'block';
+
+  // Collect tools
+  const tools = Array.from(document.querySelectorAll('[name=tools]:checked')).map(cb => cb.value).join(', ');
+
+  const formData = {
+    form_type: 'editor_designer',
+    timestamp: new Date().toISOString(),
+    full_name: document.getElementById('full_name').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    city: document.getElementById('city').value.trim(),
+    linkedin: document.getElementById('linkedin').value.trim(),
+    role_type: document.querySelector('[name=role_type]:checked').value,
+    experience: document.getElementById('experience').value,
+    tools: tools,
+    portfolio: document.getElementById('portfolio').value.trim(),
+    d2c_experience: document.getElementById('d2c_experience').value.trim(),
+    standout: document.getElementById('standout').value.trim(),
+    wfo_delhi: document.querySelector('[name=wfo_delhi]:checked').value,
+    current_ctc: document.getElementById('current_ctc').value.trim(),
+    expected_ctc: document.getElementById('expected_ctc').value.trim(),
+    notice_period: document.getElementById('notice_period').value,
+    additional_info: document.getElementById('additional_info').value.trim()
+  };
+
+  // GET via Image tag — bypasses CORS
+  const params = new URLSearchParams();
+  Object.entries(formData).forEach(([k, v]) => params.append(k, v));
+  const url = GOOGLE_SHEET_URL + '?' + params.toString();
+
+  const img = new Image();
+  img.src = url;
+
+  // Show success after brief delay
+  setTimeout(() => {
+    btn.disabled = false;
+    btnText.style.display = 'inline';
+    spinner.style.display = 'none';
+    document.getElementById('successOverlay').classList.add('show');
+  }, 2000);
+}
+</script>
+
+</body>
+</html>
